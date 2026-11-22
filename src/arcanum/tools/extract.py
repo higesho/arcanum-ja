@@ -43,20 +43,48 @@ def latest_files():
                     files[rel] = p
     return files
 
+EX_UAP = os.path.join(ROOT, 'work', 'ex_uap')
+
+def uap_files():
+    # every text file of every UAP archive (union: whichever combination the player installed)
+    out = []
+    for src in sorted(os.listdir(EX_UAP)):
+        base = os.path.join(EX_UAP, src)
+        for dp, dn, fn in os.walk(base):
+            for f in fn:
+                p = os.path.join(dp, f)
+                rel = os.path.relpath(p, base).replace('\\', '/').lower()
+                if rel.endswith('.dlg') or (rel.startswith('mes/') and rel.endswith('.mes')):
+                    out.append((rel, p, src))
+    return sorted(out)
+
 def main():
-    files = latest_files()
+    add = '--add-uap' in sys.argv
     units, by_en, fullmap = [], {}, {}
+    if add:
+        # keep existing unit ids (translations are keyed by id); append new strings only
+        units = json.load(open(os.path.join(ROOT, 'text', 'src', 'units.json'), encoding='utf-8'))
+        by_en = {u['en']: u for u in units}
+        fullmap = json.load(open(os.path.join(ROOT, 'work', 'fullmap.json'), encoding='utf-8'))
+        first_new = len(units) + 1
+        todo = uap_files()
+    else:
+        files = latest_files()
+        todo = [(rel, files[rel], '') for rel in sorted(files)]
     def unit(en, kind, rel, extra=None):
         if en in by_en:
             u = by_en[en]
-            if len(u['refs']) < 3: u['refs'].append(rel)
+            if len(u['refs']) < 3 and rel not in u['refs']: u['refs'].append(rel)
             return
         u = {'id': len(units) + 1, 'en': en, 'kind': kind, 'file': rel, 'refs': []}
         if extra: u.update(extra)
+        if add: u['src'] = cur_src[0]
         units.append(u); by_en[en] = u
-    for rel in sorted(files):
+    cur_src = ['']
+    for rel, path, src in todo:
+        cur_src[0] = src
         if rel in SKIP_FILES: continue
-        data = open(files[rel], 'rb').read().decode('latin-1')
+        data = open(path, 'rb').read().decode('latin-1')
         fl = fields(data)
         if rel.endswith('.mes'):
             name = rel.split('/')[-1][:-4]
@@ -116,6 +144,12 @@ def main():
     json.dump(fullmap, open(os.path.join(ROOT, 'work', 'fullmap.json'), 'w', encoding='utf-8'), ensure_ascii=False)
     from collections import Counter
     c, cc = Counter(), Counter()
+    shown = units[first_new - 1:] if add else units
+    if add:
+        print('new units', len(shown), 'ids', first_new, '-', len(units))
+        s = Counter(u['src'] for u in shown)
+        for k in sorted(s): print('  src %-22s %6d' % (k, s[k]))
+    units = shown
     for u in units: c[u['kind']] += 1; cc[u['kind']] += len(u['en'])
     print(len(units), 'units', sum(cc.values()), 'chars')
     for k in c: print('  %-10s %6d %8d' % (k, c[k], cc[k]))

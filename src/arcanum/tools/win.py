@@ -9,7 +9,7 @@
 #   python tools/win.py stop                kill the game, remove the DLL from the game folder
 import sys, os, time, mmap, struct, subprocess, shutil, ctypes
 ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
-GAME = os.path.abspath(os.path.join(ROOT, '..', 'Arcanum'))
+GAME = os.environ.get('ARCJP_GAME') or os.path.abspath(os.path.join(ROOT, '..', 'Arcanum'))   # ARCJP_GAME=uap/game for the UAP copy
 PIDF = os.path.join(ROOT, 'work', 'pid.txt')
 SHM_SIZE = 4 + 8 + 256 * 16 + 8 + 260 + 8
 O_WR, O_RD, O_CMD = 4, 8, 12
@@ -77,13 +77,44 @@ def shot(name):
     im.save(out)
     print(out, im.size)
 
+def gshot(name):
+    """the game's own screenshot of its back buffer (for DDrawCompat windows PrintWindow cannot read)"""
+    from PIL import Image
+    m = shm(); settle(m)
+    os.makedirs(os.path.join(ROOT, 'capture'), exist_ok=True)
+    bmp = os.path.join(ROOT, 'work', 'gshot.bmp')
+    path = bmp.encode('mbcs') + bytes(1)
+    m[O_PATH:O_PATH + len(path)] = path
+    req = struct.unpack_from('<i', m, O_REQ)[0] + 1
+    struct.pack_into('<i', m, O_REQ, req)
+    t = time.time()
+    while struct.unpack_from('<i', m, O_DONE)[0] != req and time.time() - t < 15: time.sleep(0.05)
+    out = os.path.join(ROOT, 'capture', name + '.png')
+    if not os.path.exists(bmp):
+        # modules write screenshots into their own folder (modules\<name>\screenNNNN.bmp)
+        import glob
+        c = [f for f in glob.glob(os.path.join(GAME, 'modules', '*', 'screen*.bmp')) if time.time() - os.path.getmtime(f) < 30]
+        if c: shutil.move(max(c, key=os.path.getmtime), bmp)
+    im = Image.open(bmp)
+    import ctypes.wintypes as W
+    u = ctypes.windll.user32; u.SetProcessDPIAware()
+    h = game_hwnd(); r = W.RECT(); u.GetClientRect(h, ctypes.byref(r))
+    if im.size != (r.right, r.bottom):
+        # windowed High Resolution Patch: the game's screenshot is the whole desktop -> keep the game only
+        pt = W.POINT(0, 0); u.ClientToScreen(h, ctypes.byref(pt))
+        x0 = pt.x - u.GetSystemMetrics(76); y0 = pt.y - u.GetSystemMetrics(77)
+        im = im.crop((x0, y0, x0 + r.right, y0 + r.bottom))
+    im.save(out); os.remove(bmp)
+    print(out, Image.open(out).size)
+
 def start():
     exe = os.path.join(GAME, 'Arcanum.exe')
     shutil.copy(os.path.join(ROOT, 'build', 'dinput.dll'), os.path.join(GAME, 'dinput.dll'))
     env = dict(os.environ)
     env['ARCJP_TEST'] = '1'
     env['ARCJP_LOG'] = os.path.join(ROOT, 'work', 'arcjp.log')
-    args = ['-window']
+    # the UAP High Resolution Patch breaks text with -window: use its own Windowed = 1 setting
+    args = [] if os.path.isdir(os.path.join(GAME, 'HighRes')) else ['-window']
     for a in sys.argv[2:]:
         if '=' in a and not a.startswith('-'):
             k, v = a.split('=', 1); env[k] = v
@@ -146,6 +177,8 @@ def main():
         m = shm(); push(m, (7, int(a[1]), int(a[2])), (6, 300)); settle(m)
     elif c == 'wait':
         m = shm(); push(m, (6, int(a[1]))); settle(m)
+    elif c == 'gshot':
+        gshot(sys.argv[2])
     elif c == 'frame':
         print(struct.unpack_from('<i', shm(), O_FRAME)[0])
     else: print(__doc__)

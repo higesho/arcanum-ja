@@ -516,12 +516,20 @@ void font_init(HMODULE self)
     patch_jmp(A_FONT_WRITE, my_font_write);
     /* speech bubbles: 200x200 buffer -> 300x300 buffer, text area 200 wide x 300 high
      * (Japanese needs more lines than English; long lines were cut off at the bottom) */
-    if (check_bytes(0x4d5c7d, "b9c8000000") && ((int *)0x5b8eb0)[3] == 200) {
-        static const uint8_t mov_ecx_300[5] = { 0xb9, 0x2c, 0x01, 0x00, 0x00 };
-        int h = 300;
-        patch_bytes(0x4d5c7d, mov_ecx_300, 5);
-        patch_bytes(0x5b8eb0 + 12, &h, 4);
-    } else dlog("text bubble: unexpected code, not patched");
+    /* the High Resolution Patch (UAP) widens the bubble to 235/300 for its bigger dialog fonts:
+     * keep its width, make the buffer and text area 1.5x as tall (at least 300) */
+    {
+        uint8_t *p = (uint8_t *)0x4d5c7d;
+        int w = *(int *)(p + 1), *rect = (int *)0x5b8eb0;
+        if (p[0] == 0xb9 && w >= 200 && w <= 400 && rect[2] == w && rect[3] == w) {
+            uint8_t mov_ecx[5] = { 0xb9 };
+            int h = w * 3 / 2 < 300 ? 300 : w * 3 / 2;
+            memcpy(mov_ecx + 1, &h, 4);
+            patch_bytes(0x4d5c7d, mov_ecx, 5);
+            patch_bytes(0x5b8eb0 + 12, &h, 4);
+            dlog("text bubble %d -> %d", w, h);
+        } else dlog("text bubble: unexpected code, not patched");
+    }
     if (check_bytes(0x56c931, "57 8bfd 83c9ff 33c0 f2ae")) patch_jmp(0x56c931, para_stub);
     else dlog("paragraph splitter: unexpected code, not patched");
 }

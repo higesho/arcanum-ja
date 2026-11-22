@@ -30,10 +30,29 @@ static void key_msg(int dik, int pressed)
 
 static void do_shot(void)
 {
-    char src[MAX_PATH];
-    DeleteFileA("screen0000.bmp");
+    /* the screenshot goes to the first writable file repository as the next free screenNNNN.bmp
+     * (game folder, data\ or modules\Arcanum\ depending on the setup): take the newest one */
+    static const char *const dirs[3] = { "", "data\\", "modules\\Arcanum\\" };
+    char src[MAX_PATH] = "", pat[MAX_PATH];
+    FILETIME t0, best = { 0, 0 };
+    WIN32_FIND_DATAA fd;
+    HANDLE fh;
+    int i;
+    GetSystemTimeAsFileTime(&t0);
     ((int (__cdecl *)(int))A_SHOT_INTERNAL)(G_SHOT_KEY);
-    GetFullPathNameA("screen0000.bmp", MAX_PATH, src, NULL);
+    for (i = 0; i < 3; i++) {
+        sprintf(pat, "%sscreen*.bmp", dirs[i]);
+        fh = FindFirstFileA(pat, &fd);
+        if (fh == INVALID_HANDLE_VALUE) continue;
+        do {
+            if (CompareFileTime(&fd.ftLastWriteTime, &best) > 0 && CompareFileTime(&fd.ftCreationTime, &t0) >= 0) {
+                best = fd.ftLastWriteTime;
+                sprintf(pat, "%s%s", dirs[i], fd.cFileName);
+                GetFullPathNameA(pat, MAX_PATH, src, NULL);
+            }
+        } while (FindNextFileA(fh, &fd));
+        FindClose(fh);
+    }
     DeleteFileA(g_shm->shot_path);
     if (!MoveFileA(src, g_shm->shot_path)) dlog("shot: move failed %lu", GetLastError());
 }

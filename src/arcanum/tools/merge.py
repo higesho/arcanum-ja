@@ -8,7 +8,7 @@ def main():
     units = json.load(open(os.path.join(ROOT, 'text', 'src', 'units.json'), encoding='utf-8'))
     by_id = {u['id']: u for u in units}
     seg = {}
-    for p in sorted(glob.glob(os.path.join(ROOT, 'text', 'ja', 'c*.json'))):
+    for p in sorted(glob.glob(os.path.join(ROOT, 'text', 'ja', 'c*.json')) + glob.glob(os.path.join(ROOT, 'text', 'ja', 'u*.json'))):
         try: ja = json.load(open(p, encoding='utf-8'))
         except Exception as e:
             print('BAD', p, e); continue

@@ -23,7 +23,8 @@
 <p class="tag">Steam 版の「Arcanum: Of Steamworks and Magick Obscura」を日本語で遊べるようにする、非公式のファンメイド日本語化パッチです。
 人物との会話と選択肢、クエストや評判の日誌、本・手紙・新聞・碑文、メニューや設定の画面、キャラクター作成、品物・呪文・技術の名前と説明、戦いや状態の知らせまで、ゲームの中の文章を日本語にしています。
 声は英語のままで、文字が日本語になります。
-ゲームのフォルダにファイルをひとつ置くだけで日本語になり、消せば英語に戻ります。</p>
+ゲームのフォルダにファイルをひとつ置くだけで日本語になり、消せば英語に戻ります。
+非公式パッチ Unofficial Arcanum Patch（UAP）を入れたゲームにも対応しています。</p>
 <p><a class="dl" href="https://github.com/higesho/arcanum-ja/releases/latest">ダウンロード（GitHub）</a></p>
 </section>
 
@@ -46,6 +47,8 @@
   <figure><img src="img/inventory.png" alt="所持品の画面で指輪の説明を見る" loading="lazy"><figcaption>所持品と品物の説明</figcaption></figure>
   <figure><img src="img/book.png" alt="カラドンの国政について書かれた本を読む画面" loading="lazy"><figcaption>本</figcaption></figure>
   <figure><img src="img/news.png" alt="新聞タランティアン紙を読む画面" loading="lazy"><figcaption>新聞</figcaption></figure>
+  <figure><img src="img/uap_talk.png" alt="UAP と高解像度パッチを入れたゲームで、ヴァージルの長い台詞が吹き出しに表示されている画面" loading="lazy"><figcaption>UAP＋高解像度パッチでの会話</figcaption></figure>
+  <figure><img src="img/uap_race.png" alt="UAP の Race Mod で、オークを選んで種族の説明を読む画面" loading="lazy"><figcaption>UAP の Race Mod でオークを選ぶ</figcaption></figure>
 </div>
 
 <div class="text">
@@ -62,13 +65,29 @@
 </ul>
 <p>セーブデータは英語版と共通です。日本語版と英語版を行き来しても、続きから遊べます。</p>
 
+<h2>非公式パッチ（UAP）と一緒に使う</h2>
+<p>Drog Black Tooth 氏の非公式パッチ <a href="https://terra-arcanum.com/drog/uap.html">Unofficial Arcanum Patch 2.0.2</a>（UAP）を入れたゲームでも日本語になります。
+UAP を先に入れてから、<code>dinput.dll</code> を置いてください。</p>
+<ul>
+<li>UAP で直された英文や増えた会話・説明も訳してあります。</li>
+<li>UAP の高解像度パッチ、公式 DLC（7 本の追加シナリオ）、Race Mod（オーク・オーガ・ダークエルフ）、Beta Content や Misc Mods の文章も日本語になります。</li>
+<li>高解像度パッチをウインドウで遊ぶときは、起動オプションの <code>-window</code> ではなく、<code>HighRes</code> フォルダの <code>config.ini</code> で <code>Windowed = 1</code> にして <code>_install.bat</code> を実行してください。<code>-window</code> を付けると、英語版でもメニューの文字が消えます。</li>
+<li>オプションの「モジュール」欄に出る追加シナリオの名前は英語のままです。</li>
+</ul>
+
 <h2>遊ぶときの注意</h2>
 <ul>
 <li>キャラクターやセーブの名前は英字で入力します。</li>
 <li>同行者に打ち込む命令（<code>wait</code>、<code>follow</code> など）は英語のままです。</li>
 <li>メインメニューの項目は「シングルプレイ(S)」のように表示し、括弧の英字キーでも選べます。</li>
 <li>地図の地名やボタンの飾りなど、絵として描かれた文字は英語のままです。ムービーも英語のままです。</li>
-<li>Steam 版の <code>Arcanum.exe</code>（1.0.7.4）と中身が違うときは、日本語化せずに英語のまま動きます。</li>
+<li>Steam 版の <code>Arcanum.exe</code>（1.0.7.4）や UAP 2.0.2 の <code>Arcanum.exe</code> と中身が違うときは、日本語化せずに英語のまま動きます。</li>
+</ul>
+
+<h2>更新履歴</h2>
+<ul>
+<li>v1.1（2026-11-23）… 非公式パッチ UAP 2.0.2 に対応しました（高解像度パッチ、公式 DLC、Race Mod を含む）。長くて枠からはみ出していたメニュー項目と種族の説明を短くしました。</li>
+<li>v1.0（2026-11-15）… 最初の公開。</li>
 </ul>
 
 <h2>ご意見・誤訳の報告</h2>

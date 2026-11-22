@@ -16,6 +16,7 @@ Steam 版「Arcanum: Of Steamworks and Magick Obscura」を日本語で遊べる
 2. いつもどおり Steam から起動します。
 
 外すときは、`dinput.dll` を消せば英語版に戻ります。
+非公式パッチ Unofficial Arcanum Patch 2.0.2（UAP）を入れたゲームにも対応しています（UAP を先に入れてから `dinput.dll` を置きます）。
 ゲームのファイルは書き換えません。配布物には原作のプログラムやデータは入っていません。
 
 ## ご意見・誤訳の報告
