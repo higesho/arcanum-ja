@@ -86,6 +86,7 @@ static int has_jp(const uint8_t *s)
 /* In Japanese text set in a font smaller than the Japanese em (newspaper body, 10px),
  * Latin letters and digits are drawn with the Japanese font too, or they look like superscripts. */
 static int g_asc_gdi;
+static int g_fit;      /* set while written_ui_draw_string runs (notes, telegrams) */
 static int ascii_adv(int em, int ch);
 static int gdi_char(const uint8_t *s) { return jp_lead(s) || (g_asc_gdi && *s >= 0x20 && *s < 0x7f); }
 
@@ -394,6 +395,34 @@ static int __cdecl my_font_write(void *vb, const char *str, const TRect *rect, T
     jp = has_jp(s);
     g_asc_gdi = jp && m->h < m->em;
     lh = line_h(f, m, jp);
+    /* notes and telegrams have one fixed text area and no pages; the note font is 33px tall,
+     * so Japanese (one em per character) overflows it: shrink the Japanese em until it fits */
+    if (g_fit && jp && !(f->flags & 1)) {
+        static FMet fm;
+        fm = *m;
+        for (;;) {
+            const uint8_t *p = s;
+            int lines = 0, skip, lw, len;
+            g_asc_gdi = 1;  /* Latin and digits in the Japanese font too (the handwriting digits sit high) */
+            for (;;) {
+                len = next_line(f, &fm, p, rect->width, &skip, &lw);
+                lines++;
+                p += len;
+                if (!*p) break;
+                if (len == 0 && skip == 0) p += jp_lead(p) ? 2 : 1;
+                p += skip;
+                if (!*p) break;
+            }
+            if (lines * fm.lh <= rect->height || fm.em <= 12) break;
+            fm.em--;
+            fm.lh = fm.em + (fm.em + 4) / 5;
+        }
+        if (fm.em != m->em) {
+            if (g_test) dlog("fit: em %d -> %d (rect %dx%d)", m->em, fm.em, rect->width, rect->height);
+            m = &fm;
+            lh = fm.lh;
+        }
+    }
     shadow = (f->flags & 8) != 0;
     passes = shadow ? 2 : 1;
     memset(&bi, 0, sizeof bi);
@@ -499,6 +528,14 @@ __declspec(naked) static void para_stub(void)
     }
 }
 
+/* written_ui_draw_string (0x56C750): note text, telegram text and disclaimer */
+static void __cdecl my_written_draw_string(const char *str, int font_num, void *rect)
+{
+    g_fit = 1;
+    ((void (__cdecl *)(const char *, int, void *))0x56c750)(str, font_num, rect);
+    g_fit = 0;
+}
+
 void font_init(HMODULE self)
 {
     HRSRC r = FindResourceA(self, MAKEINTRESOURCEA(2), "ARCJP");
@@ -532,6 +569,15 @@ void font_init(HMODULE self)
     }
     if (check_bytes(0x56c931, "57 8bfd 83c9ff 33c0 f2ae")) patch_jmp(0x56c931, para_stub);
     else dlog("paragraph splitter: unexpected code, not patched");
+    if (check_bytes(0x56c750, "83ec2c 8b4c2434 8d442404 50")) {
+        static const uint32_t calls[3] = { 0x56c161, 0x56c519, 0x56c52d };
+        int i;
+        for (i = 0; i < 3; i++) {
+            uint8_t *c = (uint8_t *)calls[i];
+            if (c[0] == 0xe8 && calls[i] + 5 + *(int32_t *)(c + 1) == 0x56c750) patch_call(calls[i], my_written_draw_string);
+            else dlog("written string call %08x: unexpected code", calls[i]);
+        }
+    } else dlog("written_ui_draw_string: unexpected code, not patched");
 }
 
 /* colour masks are only known once the video mode is up: fetch lazily */
