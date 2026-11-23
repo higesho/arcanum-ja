@@ -147,6 +147,31 @@ void log_untranslated(const char *s)
     dlog("UNTR|%s", s);
 }
 
+/* Follower orders: the drop-down menu (follower_ui.mes, translated for display) sends
+ * "<name> <menu label>" as a broadcast, and broadcast_match_str_to_cmd_type compares the
+ * label with the English commands in broadcast.mes. Map the Japanese labels back to
+ * English before the compare (same code as 0x4c3b40 otherwise). */
+typedef struct { const char *str; int type; } BcCmd;
+static int __cdecl my_bc_match(const char *str)
+{
+    static const char *const en[6] = { "Walk", "Attack", "Stay Close", "Spread Out", "Back Off", "Wait" };
+    int (__cdecl *ci_cmp)(const char *, const char *) = (int (__cdecl *)(const char *, const char *))0x58adb0;
+    BcCmd *cmds = *(BcCmd **)0x5ff404;
+    int n = *(int *)0x5ff408, i;
+    while (*str == ' ') str++;
+    for (i = 0; i < 6; i++) {
+        const char *t = tr_lookup(en[i]);
+        if (t && !strcmp(str, t)) { str = en[i]; break; }
+    }
+    for (i = 0; i < n; i++)
+        if (!ci_cmp(str, cmds[i].str)) {
+            if (g_test) dlog("broadcast cmd '%s' -> %d", str, cmds[i].type);
+            return cmds[i].type;
+        }
+    if (g_test) dlog("broadcast cmd '%s' -> none", str);
+    return 0;
+}
+
 void text_init(HMODULE self)
 {
     HRSRC r = FindResourceA(self, MAKEINTRESOURCEA(1), "ARCJP");
@@ -163,4 +188,7 @@ void text_init(HMODULE self)
     patch_call(0x4d4304, my_mes_load_internal);
     patch_call(0x417783, my_dlg_parse);
     patch_call(0x417811, my_dlg_parse);
+    if (check_bytes(0x4c3b40, "56 8b742408 57 803e20 7508 8a4601 46 3c20 74f8 a108f45f00"))
+        patch_jmp(0x4c3b40, my_bc_match);
+    else dlog("broadcast match: unexpected code, not patched");
 }
