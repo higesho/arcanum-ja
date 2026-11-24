@@ -1,5 +1,5 @@
 # Drive the test game through the DLL's shared memory (never the foreground window).
-#   python tools/win.py start [args]       copy build/dinput.dll into the game, launch -window with ARCJP_TEST=1
+#   python tools/win.py start [args]       copy build/test/dinput.dll (試験版: src/build.bat test) into the game, launch -window with ARCJP_TEST=1
 #   python tools/win.py shot NAME           game back-buffer -> capture/NAME.png
 #   python tools/win.py key K [K..]         tap keys (DIK names: enter esc space up down ... a..z 0..9 f1..)
 #   python tools/win.py click X Y [right]   move the game cursor to X,Y (800x600) and click
@@ -109,7 +109,7 @@ def gshot(name):
 
 def start():
     exe = os.path.join(GAME, 'Arcanum.exe')
-    shutil.copy(os.path.join(ROOT, 'build', 'dinput.dll'), os.path.join(GAME, 'dinput.dll'))
+    shutil.copy(os.path.join(ROOT, 'build', 'test', 'dinput.dll'), os.path.join(GAME, 'dinput.dll'))   # 試験版を使う
     env = dict(os.environ)
     env['ARCJP_TEST'] = '1'
     env['ARCJP_LOG'] = os.path.join(ROOT, 'work', 'arcjp.log')

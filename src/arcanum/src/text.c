@@ -127,6 +127,7 @@ static int __cdecl my_dlg_parse(void *stream, DlgEntry *e, int *line)
     return r;
 }
 
+#ifdef ARCJP_TEST
 /* ---- untranslated text log (test builds only; ARCJP_LOG must be set) ---- */
 void log_untranslated(const char *s)
 {
@@ -146,6 +147,7 @@ void log_untranslated(const char *s)
     if (nseen < 16384) seen[nseen++] = h;
     dlog("UNTR|%s", s);
 }
+#endif
 
 /* Follower orders: the drop-down menu (follower_ui.mes, translated for display) sends
  * "<name> <menu label>" as a broadcast, and broadcast_match_str_to_cmd_type compares the

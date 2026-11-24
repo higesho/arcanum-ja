@@ -70,8 +70,14 @@ typedef void *(__cdecl *AllocFn)(size_t n);
 typedef void (__cdecl *FreeFn)(void *p);
 
 /* ---- main.c ---- */
+#ifdef ARCJP_TEST
 extern int g_test;
 void dlog(const char *fmt, ...);
+#else
+/* 配布版には試験の仕組みも記録も入れない */
+#define g_test 0
+#define dlog(...) ((void)0)
+#endif
 void patch_jmp(uint32_t at, void *to);
 void patch_call(uint32_t at, void *to);
 void patch_bytes(uint32_t at, const void *b, int n);
@@ -86,8 +92,10 @@ int  jp_lead(const uint8_t *s);
 void text_init(HMODULE self);
 const char *tr_lookup(const char *en);
 uint64_t fnv64(const uint8_t *s, int n);
+#ifdef ARCJP_TEST
 void log_untranslated(const char *s);
 
-/* ---- testio.c ---- */
+/* ---- testio.c（試験版だけ） ---- */
 void testio_init(void);
 void testio_ping(void);
+#endif

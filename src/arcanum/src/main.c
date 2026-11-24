@@ -5,6 +5,8 @@
 
 void proxy_init(void);
 
+#ifdef ARCJP_TEST
+/* 試験版だけ: ARCJP_TEST=1 で試験の操作口、ARCJP_LOG=<ファイル> で記録 */
 int g_test;
 static char g_logpath[MAX_PATH];
 static CRITICAL_SECTION g_logcs;
@@ -25,6 +27,7 @@ void dlog(const char *fmt, ...)
     }
     LeaveCriticalSection(&g_logcs);
 }
+#endif
 
 void patch_bytes(uint32_t at, const void *b, int n)
 {
@@ -98,6 +101,7 @@ static int version_ok(void)
         && check_bytes(A_TIG_PING, "68349f7300 e876ed0000");
 }
 
+#ifdef ARCJP_TEST
 static LONG WINAPI crash_filter(EXCEPTION_POINTERS *e)
 {
     CONTEXT *c = e->ContextRecord;
@@ -114,24 +118,36 @@ static LONG WINAPI crash_filter(EXCEPTION_POINTERS *e)
     }
     return EXCEPTION_CONTINUE_SEARCH;
 }
+#endif
 
 BOOL WINAPI DllMain(HINSTANCE h, DWORD reason, LPVOID r)
 {
+#ifdef ARCJP_TEST
     char buf[16];
+#endif
     if (reason != DLL_PROCESS_ATTACH) return TRUE;
     DisableThreadLibraryCalls(h);
+#ifdef ARCJP_TEST
     InitializeCriticalSection(&g_logcs);
+#endif
     proxy_init();
+#ifdef ARCJP_TEST
     if (GetEnvironmentVariableA("ARCJP_TEST", buf, sizeof buf) && buf[0] == '1') g_test = 1;
     if (!GetEnvironmentVariableA("ARCJP_LOG", g_logpath, MAX_PATH)) g_logpath[0] = 0;
+#endif
     if (!version_ok()) {
         dlog("Arcanum.exe version mismatch - patch disabled");
         return TRUE;
     }
+#ifdef ARCJP_TEST
     if (!GetEnvironmentVariableA("ARCJP_NOTEXT", buf, sizeof buf)) text_init(h);
     if (!GetEnvironmentVariableA("ARCJP_NOFONT", buf, sizeof buf)) font_init(h);
     if (g_test) AddVectoredExceptionHandler(0, crash_filter);
     if (g_test && !GetEnvironmentVariableA("ARCJP_NOIO", buf, sizeof buf)) testio_init();
+#else
+    text_init(h);
+    font_init(h);
+#endif
     dlog("arcjp loaded (test=%d)", g_test);
     return TRUE;
 }

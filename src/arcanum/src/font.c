@@ -389,7 +389,9 @@ static int __cdecl my_font_write(void *vb, const char *str, const TRect *rect, T
     const uint8_t *s = (const uint8_t *)str;
     int passes, pass, shadow, min_dx, max_w = 0, max_y = 0, lh, jp;
     if (!str) return 0;
+#ifdef ARCJP_TEST
     if (g_test) log_untranslated(str);
+#endif
     m = metrics(f);
     if (!m->ok) return 4;
     jp = has_jp(s);

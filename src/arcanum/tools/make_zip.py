@@ -2,7 +2,9 @@
 import os, zipfile, shutil
 ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
 REL = os.path.join(ROOT, 'release')
-shutil.copy(os.path.join(ROOT, 'build', 'dinput.dll'), os.path.join(REL, 'dinput.dll'))
+dll = os.path.join(ROOT, 'build', 'dinput.dll')   # 配布版（build.bat 引数なし）。試験版 build/test は入れない
+if b'ARCJP_TESTIO' in open(dll, 'rb').read(): raise SystemExit('試験版の DLL です。src/build.bat を引数なしで作り直してください')
+shutil.copy(dll, os.path.join(REL, 'dinput.dll'))
 out = os.path.join(REL, 'Arcanum_JP.zip')
 if os.path.exists(out): os.remove(out)
 with zipfile.ZipFile(out, 'w', zipfile.ZIP_DEFLATED) as z:
